@@ -48,19 +48,6 @@ Le système utilise 20 000 particules pour recréer le volume et l'énergie de c
 - Webcam fonctionnelle
 - Bon éclairage pour une détection optimale
 
-### Installation
-
-1. **Cloner le dépôt**
-   ```bash
-   git clone https://github.com/reinesana/SAT0RU.git
-   cd SAT0RU
-   Lancer le projet
-   ```
-
-VS Code : Installer l'extension "Live Server", clic droit sur index.html → "Open with Live Server"
-
-Ou simplement ouvrir index.html dans un navigateur (certaines fonctionnalités peuvent nécessiter un serveur local)
-
 Guide des Gestes
 Geste Technique Personnage Effet
 🖕 Index levé Rouge Gojo Sphère rouge répulsive
@@ -75,8 +62,6 @@ Three.js : Rendu 3D et système de particules
 MediaPipe Hands : Détection des landmarks de la main
 
 EffectComposer : Post-processing avec effet Bloom
-
-Google Gemini 3 : Génération du code et assistance
 
 Optimisations
 20 000 particules pour un équilibre performance/qualité

@@ -2,82 +2,106 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>JJK: Extension de Territoire</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
         overflow: hidden;
         background-color: #000;
         font-family: "Courier New", sans-serif;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        touch-action: none; /* Empêche le zoom sur mobile */
       }
 
       #ui {
         position: absolute;
-        top: 10%;
+        top: 5%;
         width: 100%;
         text-align: center;
         color: #fff;
         pointer-events: none;
         z-index: 10;
+        padding: 0 10px;
       }
 
       h1 {
-        font-size: 3rem;
+        font-size: clamp(1.5rem, 8vw, 3rem);
         margin: 0;
-        letter-spacing: 10px;
+        letter-spacing: 5px;
         font-weight: 900;
         text-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
         background: linear-gradient(to bottom, #fff, #888);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #technique-name {
-        font-size: 1.2rem;
+        font-size: clamp(0.8rem, 4vw, 1.2rem);
         color: #00ffff;
-        margin-top: 15px;
+        margin-top: 10px;
         font-weight: bold;
-        letter-spacing: 4px;
+        letter-spacing: 2px;
         text-transform: uppercase;
         text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        padding: 0 10px;
+        line-height: 1.4;
       }
 
       #technique-description {
-        font-size: 0.9rem;
+        font-size: clamp(0.7rem, 3vw, 0.9rem);
         color: #aaa;
         margin-top: 5px;
-        letter-spacing: 2px;
+        letter-spacing: 1px;
+        padding: 0 10px;
       }
 
-      /* Large Centered Camera Hub - Taller for Reel Context */
       #video-container {
         position: absolute;
         bottom: 2%;
-        left: 18%;
+        left: 50%;
         transform: translateX(-50%) scaleX(-1);
-        width: 85vw;
-        max-width: 450px;
-        height: 42vh;
+        width: min(90vw, 400px);
+        height: min(35vh, 300px);
         border: 2px solid rgba(255, 255, 255, 0.2);
         z-index: 20;
         background-color: #000;
-        border-radius: 25px;
+        border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
       }
 
-      video {
+      video,
+      #output_canvas {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        opacity: 0.8;
       }
+
+      video {
+        opacity: 0.8;
+        transform: scaleX(-1); /* Correction du mirror */
+      }
+
       #output_canvas {
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
+        pointer-events: none;
       }
 
       #grain {
@@ -96,13 +120,70 @@
         bottom: 5%;
         right: 2%;
         color: rgba(255, 255, 255, 0.3);
-        font-size: 0.7rem;
+        font-size: clamp(0.5rem, 2.5vw, 0.7rem);
         z-index: 30;
         text-align: right;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 10px;
-        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 8px;
+        border-radius: 8px;
         pointer-events: none;
+        max-width: 45%;
+        backdrop-filter: blur(5px);
+      }
+
+      #error-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        background: rgba(0, 0, 0, 0.9);
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        z-index: 100;
+        display: none;
+        border: 2px solid #ff0000;
+        max-width: 80%;
+        font-size: clamp(0.8rem, 4vw, 1rem);
+      }
+
+      #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: cyan;
+        font-size: clamp(1rem, 5vw, 1.5rem);
+        text-shadow: 0 0 10px cyan;
+        z-index: 50;
+        text-align: center;
+      }
+
+      .permission-button {
+        position: absolute;
+        bottom: 50%;
+        left: 50%;
+        transform: translate(-50%, 50%);
+        background: rgba(0, 255, 255, 0.2);
+        color: cyan;
+        border: 2px solid cyan;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        z-index: 200;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        display: none;
+        white-space: nowrap;
+      }
+
+      @media (orientation: landscape) {
+        #video-container {
+          width: min(70vw, 450px);
+          height: min(45vh, 350px);
+        }
       }
     </style>
 
@@ -114,6 +195,33 @@
         }
       }
     </script>
+  </head>
+  <body>
+    <div id="grain"></div>
+    <div id="loading">Initialisation...</div>
+    <div id="error-message"></div>
+    <button class="permission-button" id="request-permission">
+      Activer la caméra 📷
+    </button>
+
+    <div id="ui">
+      <h1>呪術廻戦</h1>
+      <div id="technique-name">NEUTRE</div>
+      <div id="technique-description"></div>
+    </div>
+
+    <div id="video-container">
+      <video class="input_video" playsinline></video>
+      <canvas id="output_canvas"></canvas>
+    </div>
+
+    <div id="instructions">
+      <div>🖕 Index = Rouge</div>
+      <div>✌️ 2 doigts = Vide</div>
+      <div>🤏 Pincement = Violet</div>
+      <div>✌️ Croisés = Sanctuaire</div>
+    </div>
+
     <script
       src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
       crossorigin="anonymous"
@@ -126,72 +234,77 @@
       src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
       crossorigin="anonymous"
     ></script>
-  </head>
-  <body>
-    <div id="grain"></div>
-
-    <div id="ui">
-      <h1>呪術廻戦</h1>
-      <div id="technique-name">NEUTRE</div>
-      <div id="technique-description"></div>
-    </div>
-
-    <div id="video-container">
-      <video class="input_video"></video>
-      <canvas id="output_canvas"></canvas>
-    </div>
-
-    <div id="instructions">
-      <div>🖕 Index levé = Rouge (Repoussement)</div>
-      <div>✌️ Index + Majeur = Vide Infini</div>
-      <div>🤏 Pincement = Violet Creux</div>
-      <div>✌️ Doigts croisés = Sanctuaire Innommable</div>
-      <div>🖐️ Main plate = Technique désactivée</div>
-    </div>
 
     <script type="module">
+      // --- DÉTECTION MOBILE ---
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        ) || window.innerWidth <= 800;
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+      console.log("Mobile détecté:", isMobile, "iOS:", isIOS);
+
+      // Ajustement du nombre de particules pour mobile
+      const PARTICLE_COUNT = isMobile ? 8000 : 20000;
+
+      // Éléments UI
+      const loadingEl = document.getElementById("loading");
+      const errorEl = document.getElementById("error-message");
+      const permissionBtn = document.getElementById("request-permission");
+
+      // --- IMPORT THREE (version allégée) ---
       import * as THREE from "three";
       import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
-      // --- Scene & Rendering ---
+      // --- SCENE OPTIMISÉE MOBILE ---
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(
-        75,
+        isMobile ? 60 : 75, // FOV réduit sur mobile
         window.innerWidth / window.innerHeight,
         0.1,
         1000,
       );
-      camera.position.z = 55;
+      camera.position.z = isMobile ? 65 : 55; // Caméra plus éloignée sur mobile
 
       const renderer = new THREE.WebGLRenderer({
-        antialias: true,
+        antialias: !isMobile, // Pas d'antialiasing sur mobile (performance)
         alpha: true,
+        powerPreference: "high-performance",
       });
+
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2),
+      ); // Réduction pixel ratio sur mobile
       document.body.appendChild(renderer.domElement);
 
-      const composer = new EffectComposer(renderer);
-      composer.addPass(new RenderPass(scene, camera));
-      const bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1.5,
-        0.4,
-        0.85,
-      );
-      composer.addPass(bloomPass);
+      // Post-processing optionnel sur mobile
+      let composer;
+      if (!isMobile) {
+        composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloomPass = new UnrealBloomPass(
+          new THREE.Vector2(window.innerWidth, window.innerHeight),
+          1.5,
+          0.4,
+          0.85,
+        );
+        composer.addPass(bloomPass);
+      }
 
-      const COUNT = 20000;
+      // --- SYSTÈME DE PARTICULES OPTIMISÉ ---
       const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(COUNT * 3);
-      const colors = new Float32Array(COUNT * 3);
-      const sizes = new Float32Array(COUNT);
+      const positions = new Float32Array(PARTICLE_COUNT * 3);
+      const colors = new Float32Array(PARTICLE_COUNT * 3);
+      const sizes = new Float32Array(PARTICLE_COUNT);
 
-      const targetPositions = new Float32Array(COUNT * 3);
-      const targetColors = new Float32Array(COUNT * 3);
-      const targetSizes = new Float32Array(COUNT);
+      const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
+      const targetColors = new Float32Array(PARTICLE_COUNT * 3);
+      const targetSizes = new Float32Array(PARTICLE_COUNT);
 
       geometry.setAttribute(
         "position",
@@ -203,7 +316,7 @@
       const particles = new THREE.Points(
         geometry,
         new THREE.PointsMaterial({
-          size: 0.3,
+          size: isMobile ? 0.5 : 0.3, // Particules plus grosses sur mobile (moins nombreuses)
           vertexColors: true,
           blending: THREE.AdditiveBlending,
           transparent: true,
@@ -212,11 +325,9 @@
       );
       scene.add(particles);
 
-      // --- TECHNIQUE FUNCTIONS ---
-
-      // Technique Rouge (Repoussement)
+      // --- FONCTIONS TECHNIQUES (adaptées au nouveau COUNT) ---
       function getRed(i) {
-        if (i < COUNT * 0.1) {
+        if (i < PARTICLE_COUNT * 0.1) {
           const r = Math.random() * 9;
           const theta = Math.random() * 6.28;
           const phi = Math.acos(2 * Math.random() - 1);
@@ -227,11 +338,11 @@
             r: 3,
             g: 0.1,
             b: 0.1,
-            s: 2.5,
+            s: isMobile ? 1.5 : 2.5,
           };
         } else {
           const armCount = 3;
-          const t = i / COUNT;
+          const t = i / PARTICLE_COUNT;
           const angle = t * 15 + (i % armCount) * ((Math.PI * 2) / armCount);
           const radius = 2 + t * 40;
           return {
@@ -241,14 +352,13 @@
             r: 0.8,
             g: 0,
             b: 0,
-            s: 1.0,
+            s: isMobile ? 0.8 : 1.0,
           };
         }
       }
 
-      // Technique Vide Infini
       function getVoid(i) {
-        if (i < COUNT * 0.15) {
+        if (i < PARTICLE_COUNT * 0.15) {
           const angle = Math.random() * Math.PI * 2;
           return {
             x: 26 * Math.cos(angle),
@@ -257,7 +367,7 @@
             r: 1,
             g: 1,
             b: 1,
-            s: 2.5,
+            s: isMobile ? 1.5 : 2.5,
           };
         } else {
           const radius = 30 + Math.random() * 90;
@@ -270,12 +380,11 @@
             r: 0.1,
             g: 0.6,
             b: 1.0,
-            s: 0.7,
+            s: isMobile ? 0.5 : 0.7,
           };
         }
       }
 
-      // Technique Violet Creux
       function getPurple(i) {
         if (Math.random() > 0.8) {
           return {
@@ -285,7 +394,7 @@
             r: 0.5,
             g: 0.5,
             b: 0.7,
-            s: 0.8,
+            s: isMobile ? 0.6 : 0.8,
           };
         }
         const r = 20;
@@ -298,51 +407,29 @@
           r: 0.6,
           g: 0.5,
           b: 1.0,
-          s: 2.5,
+          s: isMobile ? 1.5 : 2.5,
         };
       }
 
-      // EXTENSION DE TERRITOIRE: SANCTUAIRE INNOMMABLE (MALEVOLENT SHRINE)
       function getShrine(i) {
-        const total = COUNT;
+        const total = PARTICLE_COUNT;
 
-        // 30% : Crânes de taureaux au sol (base du sanctuaire)
         if (i < total * 0.3) {
           const angle = Math.random() * Math.PI * 2;
-          const radius = 15 + Math.random() * 15; // Cercle de 15-30 unités
-          const variation = (Math.random() - 0.5) * 3;
+          const radius = 15 + Math.random() * 15;
           return {
-            x: radius * Math.cos(angle) + variation,
-            y: -8 + Math.random() * 2, // Sol
-            z: radius * Math.sin(angle) * 0.7 + variation,
+            x: radius * Math.cos(angle),
+            y: -8 + Math.random() * 2,
+            z: radius * Math.sin(angle) * 0.7,
             r: 0.4,
             g: 0.05,
-            b: 0.05, // Rouge très sombre
-            s: 0.9 + Math.random() * 0.5,
+            b: 0.05,
+            s: isMobile ? 0.7 : 0.9,
           };
-        }
-
-        // 30% : Structure principale du sanctuaire (pagode démoniaque)
-        else if (i < total * 0.6) {
-          const height = Math.random() * 25; // Hauteur 0-25
-          const radius = 6 * (1 - height / 30); // Se rétrécit vers le haut
+        } else if (i < total * 0.6) {
+          const height = Math.random() * 25;
+          const radius = 6 * (1 - height / 30);
           const angle = Math.random() * Math.PI * 2;
-          const segment = Math.floor(height / 5); // Étage du sanctuaire
-
-          // Cornes démoniaques au sommet
-          if (height > 20) {
-            const hornAngle = angle + (Math.random() > 0.5 ? 0.5 : -0.5);
-            return {
-              x: 2 * Math.cos(hornAngle),
-              y: height,
-              z: 2 * Math.sin(hornAngle),
-              r: 0.8,
-              g: 0.1,
-              b: 0.1,
-              s: 1.5,
-            };
-          }
-
           return {
             x: radius * Math.cos(angle),
             y: height - 5,
@@ -350,28 +437,9 @@
             r: 0.5 + height / 50,
             g: 0.1,
             b: 0.1,
-            s: 1.0 + height / 20,
+            s: isMobile ? 0.8 : 1.0,
           };
-        }
-
-        // 20% : Bouches grotesques et décorations
-        else if (i < total * 0.8) {
-          const entrance = Math.floor(Math.random() * 4); // 4 entrées
-          const angle = (entrance * Math.PI) / 2 + (Math.random() - 0.5) * 0.5;
-          const radius = 10;
-          return {
-            x: radius * Math.cos(angle),
-            y: (Math.random() - 0.5) * 10,
-            z: radius * Math.sin(angle) * 0.6,
-            r: 0.7,
-            g: 0.15,
-            b: 0.15,
-            s: 1.2,
-          };
-        }
-
-        // 20% : Énergie maudite errante (effet "Cleave/Dismantle")
-        else {
+        } else {
           const radius = 25 + Math.random() * 15;
           const theta = Math.random() * Math.PI * 2;
           const phi = Math.acos(2 * Math.random() - 1);
@@ -382,27 +450,29 @@
             r: 0.9,
             g: 0.2,
             b: 0.2,
-            s: 0.5 + Math.random(),
+            s: isMobile ? 0.4 : 0.5,
           };
         }
       }
 
-      // --- HAND TRACKING ---
+      // --- GESTION CAMÉRA MOBILE ---
       let currentTech = "neutral";
       let shakeIntensity = 0;
       const videoElement = document.querySelector(".input_video");
       const canvasElement = document.getElementById("output_canvas");
       const canvasCtx = canvasElement.getContext("2d");
       let glowColor = "#00ffff";
+      let cameraUtils = null;
 
+      // Configuration MediaPipe optimisée mobile
       const hands = new Hands({
         locateFile: (file) =>
           `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
       });
       hands.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.7,
+        maxNumHands: 1, // Une seule main sur mobile (performance)
+        modelComplexity: isMobile ? 0 : 1, // Modèle léger sur mobile
+        minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5,
       });
 
@@ -410,41 +480,38 @@
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         let detected = "neutral";
 
-        if (results.multiHandLandmarks) {
+        if (
+          results.multiHandLandmarks &&
+          results.multiHandLandmarks.length > 0
+        ) {
           results.multiHandLandmarks.forEach((lm) => {
-            drawConnectors(canvasCtx, lm, HAND_CONNECTIONS, {
-              color: glowColor,
-              lineWidth: 5,
-            });
+            // Dessin simplifié sur mobile
+            if (!isMobile) {
+              drawConnectors(canvasCtx, lm, HAND_CONNECTIONS, {
+                color: glowColor,
+                lineWidth: 3,
+              });
+            }
             drawLandmarks(canvasCtx, lm, {
               color: "#fff",
               lineWidth: 1,
-              radius: 2,
+              radius: isMobile ? 1 : 2,
             });
 
             const isUp = (tip, pip) => lm[tip].y < lm[pip].y;
             const pinch = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
 
-            // Détection du croisement des doigts (pour le Sanctuaire)
-            // Index (8) et Majeur (12) croisés : leurs positions X se chevauchent
-            const indexX = lm[8].x;
-            const middleX = lm[12].x;
+            // Détection croisement (Sanctuaire)
             const isCrossed =
-              Math.abs(indexX - middleX) < 0.03 && // Très proches horizontalement
-              lm[8].y < lm[6].y && // Index levé
-              lm[12].y < lm[10].y; // Majeur levé
+              Math.abs(lm[8].x - lm[12].x) < 0.03 &&
+              lm[8].y < lm[6].y &&
+              lm[12].y < lm[10].y;
 
             if (isCrossed) {
-              detected = "shrine"; // Priorité maximale
-            } else if (pinch < 0.04) {
+              detected = "shrine";
+            } else if (pinch < 0.05) {
+              // Seuil ajusté
               detected = "purple";
-            } else if (
-              isUp(8, 6) &&
-              isUp(12, 10) &&
-              isUp(16, 14) &&
-              isUp(20, 18)
-            ) {
-              detected = "shrine"; // Alternative : main plate (garde-fou)
             } else if (isUp(8, 6) && isUp(12, 10) && !isUp(16, 14)) {
               detected = "void";
             } else if (isUp(8, 6) && !isUp(12, 10)) {
@@ -460,45 +527,51 @@
         currentTech = tech;
         const nameEl = document.getElementById("technique-name");
         const descEl = document.getElementById("technique-description");
-        shakeIntensity = tech !== "neutral" ? 0.4 : 0;
+        shakeIntensity = tech !== "neutral" && !isMobile ? 0.4 : 0; // Pas de shake sur mobile
 
-        switch (tech) {
-          case "shrine":
-            glowColor = "#8B0000";
-            nameEl.innerText = "EXTENSION DE TERRITOIRE: SANCTUAIRE INNOMMABLE";
-            descEl.innerText = "Ryōmen Sukuna - Découpage maudit à 200m";
-            bloomPass.strength = 3.0;
-            break;
-          case "purple":
-            glowColor = "#bb00ff";
-            nameEl.innerText = "TECHNIQUE SECRÈTE: VIOLET CREUX";
-            descEl.innerText = "Satoru Gojo - Annulation imaginaire";
-            bloomPass.strength = 4.0;
-            break;
-          case "void":
-            glowColor = "#00ffff";
-            nameEl.innerText = "EXTENSION DE TERRITOIRE: VIDE INFINI";
-            descEl.innerText = "Satoru Gojo - L'infini qui submerge";
-            bloomPass.strength = 2.0;
-            break;
-          case "red":
-            glowColor = "#ff3333";
-            nameEl.innerText = "INVERSION DE TECHNIQUE MAUDITE: ROUGE";
-            descEl.innerText = "Satoru Gojo - Repoussement absolu";
-            bloomPass.strength = 2.5;
-            break;
-          default:
-            glowColor = "#00ffff";
-            nameEl.innerText = "NEUTRE";
-            descEl.innerText = "";
-            bloomPass.strength = 1.0;
+        // Mise à jour UI
+        const techInfo = {
+          shrine: {
+            name: "SANCTUAIRE INNOMMABLE",
+            desc: "Sukuna - Découpage maudit",
+            color: "#8B0000",
+            bloom: 2.0,
+          },
+          purple: {
+            name: "VIOLET CREUX",
+            desc: "Gojo - Annihilation",
+            color: "#bb00ff",
+            bloom: 3.0,
+          },
+          void: {
+            name: "VIDE INFINI",
+            desc: "Gojo - Infini",
+            color: "#00ffff",
+            bloom: 1.5,
+          },
+          red: {
+            name: "ROUGE",
+            desc: "Gojo - Repoussement",
+            color: "#ff3333",
+            bloom: 2.0,
+          },
+          neutral: { name: "NEUTRE", desc: "", color: "#00ffff", bloom: 1.0 },
+        };
+
+        const info = techInfo[tech] || techInfo.neutral;
+        glowColor = info.color;
+        nameEl.innerText = info.name;
+        descEl.innerText = info.desc;
+
+        if (!isMobile && composer) {
+          composer.passes[1].strength = info.bloom;
         }
 
         // Mise à jour des positions cibles
-        for (let i = 0; i < COUNT; i++) {
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
           let p;
           if (tech === "neutral") {
-            if (i < COUNT * 0.05) {
+            if (i < PARTICLE_COUNT * 0.05) {
               const r = 15 + Math.random() * 20;
               const t = Math.random() * 6.28;
               const ph = Math.random() * 3.14;
@@ -509,7 +582,7 @@
                 r: 0.1,
                 g: 0.1,
                 b: 0.2,
-                s: 0.4,
+                s: 0.3,
               };
             } else p = { x: 0, y: 0, z: 0, r: 0, g: 0, b: 0, s: 0 };
           } else if (tech === "red") p = getRed(i);
@@ -527,38 +600,111 @@
         }
       }
 
-      const cameraUtils = new Camera(videoElement, {
-        onFrame: async () => {
-          canvasElement.width = videoElement.videoWidth;
-          canvasElement.height = videoElement.videoHeight;
-          await hands.send({ image: videoElement });
-        },
-        width: 640,
-        height: 480,
-      });
-      cameraUtils.start();
+      // --- INITIALISATION CAMÉRA AVEC GESTION ERREURS ---
+      async function initCamera() {
+        loadingEl.style.display = "block";
+        errorEl.style.display = "none";
+        permissionBtn.style.display = "none";
 
-      // --- ANIMATION ---
-      function animate() {
+        try {
+          // Vérification support navigateur
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error(
+              "Votre navigateur ne supporte pas l'accès à la caméra",
+            );
+          }
+
+          // Demande permission explicite pour iOS
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+              width: { ideal: isMobile ? 640 : 1280 },
+              height: { ideal: isMobile ? 480 : 720 },
+            },
+          });
+
+          videoElement.srcObject = stream;
+
+          // Attendre que la vidéo soit prête
+          await new Promise((resolve) => {
+            videoElement.onloadedmetadata = () => {
+              videoElement.play();
+              resolve();
+            };
+          });
+
+          // Initialiser MediaPipe Camera
+          cameraUtils = new Camera(videoElement, {
+            onFrame: async () => {
+              canvasElement.width = videoElement.videoWidth;
+              canvasElement.height = videoElement.videoHeight;
+              await hands.send({ image: videoElement });
+            },
+            width: videoElement.videoWidth,
+            height: videoElement.videoHeight,
+          });
+
+          cameraUtils.start();
+          loadingEl.style.display = "none";
+        } catch (err) {
+          console.error("Erreur caméra:", err);
+          loadingEl.style.display = "none";
+
+          if (
+            err.name === "NotAllowedError" ||
+            err.name === "PermissionDeniedError"
+          ) {
+            errorEl.innerHTML =
+              "📷 Permission caméra requise<br>Cliquez ci-dessous pour autoriser";
+            errorEl.style.display = "block";
+            permissionBtn.style.display = "block";
+          } else if (err.name === "NotFoundError") {
+            errorEl.innerHTML = "❌ Aucune caméra trouvée";
+            errorEl.style.display = "block";
+          } else {
+            errorEl.innerHTML = "❌ Erreur: " + err.message;
+            errorEl.style.display = "block";
+          }
+        }
+      }
+
+      // Bouton permission
+      permissionBtn.addEventListener("click", () => {
+        initCamera();
+      });
+
+      // Démarrer automatiquement (sauf iOS qui demande interaction)
+      if (isIOS) {
+        loadingEl.style.display = "none";
+        errorEl.innerHTML = "📱 Appuyez pour activer la caméra";
+        errorEl.style.display = "block";
+        permissionBtn.style.display = "block";
+      } else {
+        initCamera();
+      }
+
+      // --- ANIMATION OPTIMISÉE ---
+      let lastFrame = 0;
+      const fps = isMobile ? 30 : 60; // Limite FPS sur mobile
+      const frameInterval = 1000 / fps;
+
+      function animate(currentTime) {
         requestAnimationFrame(animate);
 
-        // Effet de tremblement
-        if (shakeIntensity > 0) {
-          renderer.domElement.style.transform = `translate(${(Math.random() - 0.5) * shakeIntensity * 40}px, ${(Math.random() - 0.5) * shakeIntensity * 40}px)`;
-        } else {
-          renderer.domElement.style.transform = "translate(0,0)";
-        }
+        // Limitation FPS sur mobile
+        if (isMobile && currentTime - lastFrame < frameInterval) return;
+        lastFrame = currentTime;
 
-        // Interpolation des positions/couleurs
+        // Interpolation
         const pos = particles.geometry.attributes.position.array;
         const col = particles.geometry.attributes.color.array;
         const siz = particles.geometry.attributes.size.array;
 
-        for (let i = 0; i < COUNT * 3; i++) {
-          pos[i] += (targetPositions[i] - pos[i]) * 0.1;
+        for (let i = 0; i < PARTICLE_COUNT * 3; i++) {
+          pos[i] += (targetPositions[i] - pos[i]) * (isMobile ? 0.15 : 0.1); // Transition plus rapide sur mobile
           col[i] += (targetColors[i] - col[i]) * 0.1;
         }
-        for (let i = 0; i < COUNT; i++) {
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
           siz[i] += (targetSizes[i] - siz[i]) * 0.1;
         }
 
@@ -566,29 +712,46 @@
         particles.geometry.attributes.color.needsUpdate = true;
         particles.geometry.attributes.size.needsUpdate = true;
 
-        // Rotations spécifiques aux techniques
+        // Rotations simplifiées
         if (currentTech === "red") {
-          particles.rotation.z -= 0.1;
+          particles.rotation.z -= isMobile ? 0.05 : 0.1;
         } else if (currentTech === "purple") {
-          particles.rotation.z += 0.2;
-          particles.rotation.y += 0.05;
+          particles.rotation.z += 0.1;
+          particles.rotation.y += 0.03;
         } else if (currentTech === "shrine") {
-          // Le sanctuaire reste immobile et imposant
           particles.rotation.set(0, 0, 0);
         } else {
-          particles.rotation.y += 0.005;
+          particles.rotation.y += 0.003;
         }
 
-        composer.render();
+        // Render (avec ou sans composer)
+        if (composer) {
+          composer.render();
+        } else {
+          renderer.render(scene, camera);
+        }
       }
-      animate();
+      animate(0);
 
+      // --- RESIZE HANDLER ---
       window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(window.innerWidth, window.innerHeight);
-        composer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(
+          Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2),
+        );
+
+        if (composer) {
+          composer.setSize(window.innerWidth, window.innerHeight);
+        }
+      });
+
+      // Gestion sortie de page
+      window.addEventListener("pagehide", () => {
+        if (cameraUtils) {
+          cameraUtils.stop();
+        }
       });
     </script>
   </body>

@@ -6,7 +6,7 @@
 
 SAT0RU est un visualiseur de techniques maudites basé sur l'anime populaire **Jujutsu Kaisen (呪術廻戦)**. Ce projet combine **MediaPipe** pour la détection des gestes de la main avec **Three.js** pour créer des visualisations 3D en temps réel des techniques les plus iconiques du manga.
 
-Développé avec **Google Gemini 3**, cette application transforme ta webcam en un véritable outil de sorcier !
+Cette application transforme ta webcam en un véritable outil de sorcier !
 
 ## ✨ Fonctionnalités
 
